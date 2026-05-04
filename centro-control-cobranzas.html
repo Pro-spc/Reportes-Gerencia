@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Centro de Control Operativo — Spear Contact Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --sb-bg:#0A0F1E;--sb-w:220px;
+  --bg:#F4F6FA;--surface:#FFFFFF;--surface2:#F9FAFB;--border:#E8ECF2;--border2:#D1D9E6;
+  --blue:#2563EB;--blue-soft:#EEF4FF;--blue-mid:#DBEAFE;
+  --ink:#0D1526;--ink2:#4B5A6E;--ink3:#9AABBD;
+  --r:#C53030;--r-bg:#FFF5F5;--r-br:#FEB2B2;
+  --o:#C05621;--o-bg:#FFFAF0;--o-br:#FBD38D;
+  --y:#B7791F;--y-bg:#FFFFF0;--y-br:#FAF089;
+  --g:#276749;--g-bg:#F0FFF4;--g-br:#9AE6B4;
+  font-family:'Inter',system-ui,sans-serif;font-size:13px;color:var(--ink);line-height:1.5;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);}
+.app{display:flex;height:100vh;}
+
+/* SIDEBAR */
+.sb{width:var(--sb-w);background:var(--sb-bg);display:flex;flex-direction:column;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.04);}
+.sb-top{padding:20px 16px 16px;border-bottom:1px solid rgba(255,255,255,0.05);}
+.sb-logo{display:flex;align-items:center;gap:10px;}
+.sb-logo-mark{width:32px;height:32px;border-radius:8px;background:var(--blue);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.sb-logo-mark svg{stroke:white;}
+.sb-name{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:white;line-height:1.2;}
+.sb-sub{font-size:10px;color:rgba(255,255,255,0.3);margin-top:2px;letter-spacing:.02em;}
+.sb-nav{flex:1;padding:12px 10px;overflow-y:auto;}
+.sb-section{font-size:9.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.18);padding:10px 8px 5px;}
+.sb-item{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:6px;color:rgba(255,255,255,0.38);font-size:12.5px;font-weight:500;cursor:pointer;margin-bottom:1px;transition:background .12s,color .12s;user-select:none;}
+.sb-item:hover{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.72);}
+.sb-item.on{background:rgba(255,255,255,0.09);color:white;}
+.sb-item svg{flex-shrink:0;opacity:.6;}
+.sb-item.on svg{opacity:1;}
+.sb-dot{width:5px;height:5px;border-radius:50%;background:var(--blue);margin-left:auto;flex-shrink:0;}
+.sb-bottom{padding:12px 16px;border-top:1px solid rgba(255,255,255,0.05);font-size:10px;color:rgba(255,255,255,0.16);letter-spacing:.01em;}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{height:54px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;flex-shrink:0;}
+.tb-left{display:flex;align-items:baseline;gap:10px;}
+.tb-page{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--ink);}
+.tb-sep{color:var(--border2);}
+.tb-sub{font-size:11.5px;color:var(--ink3);}
+.tb-right{display:flex;align-items:center;gap:8px;}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:5px;border:1px solid;font-size:10.5px;font-weight:600;letter-spacing:.01em;white-space:nowrap;}
+.chip-warn{background:#FFFBEB;color:#92400E;border-color:#FDE68A;}
+.chip-neutral{background:var(--surface2);color:var(--ink2);border-color:var(--border);}
+
+/* CONTENT */
+.body{flex:1;overflow-y:auto;padding:22px 28px;background:var(--bg);}
+.page{display:none;}
+.page.on{display:block;animation:rise .2s ease;}
+@keyframes rise{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:translateY(0);}}
+
+/* BANNER */
+.demo-banner{display:flex;align-items:center;justify-content:space-between;padding:9px 16px;border-radius:8px;margin-bottom:20px;background:#FFFBEB;border:1px solid #FDE68A;font-size:12px;color:#78350F;}
+.demo-cta{font-weight:600;padding:4px 12px;border-radius:5px;background:rgba(120,53,15,.1);cursor:pointer;transition:background .15s;white-space:nowrap;}
+.demo-cta:hover{background:rgba(120,53,15,.18);}
+
+/* SECTION */
+.slabel{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--ink3);margin-bottom:10px;margin-top:4px;}
+
+/* KPI */
+.kg{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px;}
+.kc{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;position:relative;overflow:hidden;transition:box-shadow .2s,transform .2s;cursor:default;}
+.kc:hover{box-shadow:0 4px 20px rgba(0,0,0,.07);transform:translateY(-1px);}
+.kc-accent{position:absolute;top:0;left:0;right:0;height:2px;background:var(--ac,var(--blue));}
+.kc-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:var(--ic-bg,#EEF4FF);margin-bottom:12px;}
+.kc-icon svg{stroke:var(--ac,var(--blue));}
+.kc-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--ink3);margin-bottom:5px;}
+.kc-val{font-family:'Syne',sans-serif;font-size:26px;font-weight:700;color:var(--ink);line-height:1;margin-bottom:4px;}
+.kc-sub{font-size:11px;color:var(--ink2);}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px;}
+.card-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px;}
+.card-sub{font-size:11px;color:var(--ink3);margin-bottom:14px;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.g3-1{display:grid;grid-template-columns:3fr 2fr;gap:14px;margin-bottom:14px;}
+.g-mb{margin-bottom:14px;}
+
+/* RISK BADGE */
+.rb{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;border:1px solid;font-size:10px;font-weight:700;letter-spacing:.03em;}
+.rb::before{content:'';width:4px;height:4px;border-radius:50%;background:currentColor;flex-shrink:0;}
+.rb-C{background:var(--r-bg);color:var(--r);border-color:var(--r-br);}
+.rb-A{background:var(--o-bg);color:var(--o);border-color:var(--o-br);}
+.rb-M{background:var(--y-bg);color:var(--y);border-color:var(--y-br);}
+.rb-B{background:var(--g-bg);color:var(--g);border-color:var(--g-br);}
+
+/* MINI LIST */
+.mini-list{display:flex;flex-direction:column;gap:6px;}
+.mini-row{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-radius:7px;background:var(--surface2);gap:10px;}
+.mini-name{font-size:12px;font-weight:600;color:var(--ink);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.mini-meta{font-size:10.5px;color:var(--ink3);margin-top:1px;}
+.mini-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+
+/* ALERT */
+.al-row{padding:12px 14px;border-radius:8px;background:var(--surface);border:1px solid var(--border);border-left-width:3px;border-left-style:solid;border-left-color:var(--al-c,#ccc);margin-bottom:10px;}
+.al-row:last-child{margin-bottom:0;}
+.al-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px;}
+.al-tags{display:flex;align-items:center;gap:6px;margin-bottom:5px;}
+.al-type{font-size:10px;font-weight:600;letter-spacing:.04em;color:var(--ink3);background:var(--surface2);padding:2px 7px;border-radius:4px;font-family:'JetBrains Mono',monospace;}
+.al-desc{font-size:12.5px;font-weight:500;color:var(--ink);line-height:1.5;}
+.al-detail{font-size:11.5px;color:var(--ink2);margin-top:3px;}
+.al-meta{font-size:11px;color:var(--ink3);text-align:right;flex-shrink:0;}
+
+/* TABLE */
+.tw{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+thead th{background:var(--surface2);color:var(--ink3);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;padding:8px 13px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;}
+thead th:hover{color:var(--blue);}
+tbody td{padding:9px 13px;border-bottom:1px solid var(--border);vertical-align:middle;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover td{background:var(--blue-soft);}
+.td-a{font-weight:600;font-size:12.5px;}
+.td-b{font-size:10.5px;color:var(--ink3);margin-top:1px;}
+.td-n{font-family:'JetBrains Mono',monospace;font-size:12px;}
+.td-g{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--g);font-weight:500;}
+.td-r{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--r);font-weight:500;}
+.td-m{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink3);}
+.td-p{font-family:'JetBrains Mono',monospace;font-size:12.5px;font-weight:600;}
+
+/* FILTERS */
+.filters{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+.fi{padding:6px 11px;border:1px solid var(--border);border-radius:7px;font-size:12px;font-family:'Inter',sans-serif;color:var(--ink);background:var(--surface);outline:none;transition:border .12s;}
+.fi:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.08);}
+.fi-count{font-size:11px;color:var(--ink3);margin-left:auto;}
+
+/* UPLOAD */
+.upload-zone{border:1.5px dashed var(--border2);border-radius:10px;padding:56px 32px;text-align:center;background:var(--surface);cursor:pointer;transition:border-color .15s,background .15s;}
+.upload-zone:hover{border-color:var(--blue);background:var(--blue-soft);}
+.upload-icon-wrap{width:56px;height:56px;border-radius:12px;background:var(--blue-soft);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;}
+.upload-icon-wrap svg{stroke:var(--blue);}
+.upload-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--ink);margin-bottom:5px;}
+.upload-hint{font-size:12px;color:var(--ink3);margin-bottom:14px;}
+.upload-tag{display:inline-block;padding:4px 12px;border:1px solid var(--border);border-radius:5px;font-size:11.5px;color:var(--ink2);background:var(--surface2);}
+.col-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:14px;}
+.col-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;background:var(--surface2);}
+.col-item code{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink);}
+.col-tag{font-size:10px;color:var(--ink3);}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+
+.foot{font-size:10.5px;color:var(--ink3);padding:8px 0 4px;}
+.ph{display:flex;align-items:center;justify-content:center;height:60vh;}
+.ph-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:52px 40px;text-align:center;max-width:360px;}
+.ph-ico{font-size:40px;margin-bottom:14px;}
+.ph-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--ink);margin-bottom:6px;}
+.ph-text{font-size:12.5px;color:var(--ink3);line-height:1.7;}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sb">
+  <div class="sb-top">
+    <div class="sb-logo">
+      <div class="sb-logo-mark">
+        <svg width="16" height="16" fill="none" stroke-width="2.2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
+      <div><div class="sb-name">Centro de Control</div><div class="sb-sub">Spear Contact Center</div></div>
+    </div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-section">Principal</div>
+    <div class="sb-item on" onclick="go('dashboard',this)">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Dashboard<span class="sb-dot"></span>
+    </div>
+    <div class="sb-item" onclick="go('carga',this)">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Cargar Reporte
+    </div>
+    <div class="sb-section">Análisis</div>
+    <div class="sb-item" onclick="go('carteras',this)">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
+      Carteras
+    </div>
+    <div class="sb-item" onclick="go('supervisores',this)">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      Supervisores
+    </div>
+    <div class="sb-item" onclick="go('asesores',this)">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Asesores
+    </div>
+    <div class="sb-item" onclick="go('promesas',this)">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+      Promesas
+    </div>
+    <div class="sb-section">Operativa</div>
+    <div class="sb-item" onclick="go('alertas',this)">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+      Alertas
+    </div>
+    <div class="sb-item" onclick="go('planes',this)">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      Planes de Acción
+    </div>
+    <div class="sb-item" onclick="go('config',this)">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      Configuración
+    </div>
+  </nav>
+  <div class="sb-bottom">v1.0 MVP &nbsp;·&nbsp; Datos locales</div>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div class="tb-left">
+      <span class="tb-page" id="tb-page">Dashboard Gerencial</span>
+      <span class="tb-sep">—</span>
+      <span class="tb-sub" id="tb-sub">Resumen ejecutivo de operaciones</span>
+    </div>
+    <div class="tb-right">
+      <span class="chip chip-warn">
+        <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Modo demostración
+      </span>
+      <span class="chip chip-neutral">
+        <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Carga: 01 dic 2024
+      </span>
+    </div>
+  </div>
+
+  <div class="body">
+    <!-- DASHBOARD -->
+    <div class="page on" id="page-dashboard">
+      <div class="demo-banner">
+        <span><strong>Modo demostración.</strong> Los datos son ficticios. Carga un reporte real de Sigella para activar el análisis operativo.</span>
+        <span class="demo-cta" onclick="go('carga',document.querySelectorAll('.sb-item')[1])">Cargar reporte →</span>
+      </div>
+      <div class="slabel">Resumen General</div>
+      <div class="kg" id="kg1"></div>
+      <div class="kg" id="kg2"></div>
+      <div class="g3-1">
+        <div class="card">
+          <div class="card-title">Efectividad por Cartera</div>
+          <div class="card-sub">Ordenado de mayor a menor — color indica nivel de riesgo</div>
+          <div style="position:relative;"><canvas id="ch-ef" role="img" aria-label="Efectividad por cartera" height="210"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Distribución de Gestiones</div>
+          <div class="card-sub">Por categoría de efectividad</div>
+          <div id="leg-pie" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;"></div>
+          <div style="position:relative;"><canvas id="ch-pie" role="img" aria-label="Distribución gestiones" height="180"></canvas></div>
+        </div>
+      </div>
+      <div class="g2">
+        <div class="card">
+          <div class="card-title">Promesas por Cartera</div>
+          <div class="card-sub">Top 8 por volumen de compromisos</div>
+          <div style="position:relative;"><canvas id="ch-pr" role="img" aria-label="Promesas por cartera" height="190"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Promesas por Tipo de Trámite</div>
+          <div class="card-sub">Distribución de compromisos negociados</div>
+          <div id="leg-tr" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;"></div>
+          <div style="position:relative;"><canvas id="ch-tr" role="img" aria-label="Promesas por tramite" height="165"></canvas></div>
+        </div>
+      </div>
+      <div class="g2">
+        <div class="card">
+          <div class="card-title">Carteras en Riesgo</div>
+          <div class="card-sub">Requieren atención prioritaria</div>
+          <div class="mini-list" id="ml-riesgo"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Alertas Recientes</div>
+          <div class="card-sub" id="al-sub-dash"></div>
+          <div id="ml-alertas"></div>
+        </div>
+      </div>
+      <div class="foot">Última actualización: 01 diciembre 2024 &nbsp;·&nbsp; Modo demostración &nbsp;·&nbsp; Spear Contact Center</div>
+    </div>
+
+    <!-- CARGA -->
+    <div class="page" id="page-carga">
+      <div style="max-width:580px;margin:0 auto;">
+        <div class="card g-mb" style="display:flex;align-items:flex-start;gap:16px;">
+          <div style="width:40px;height:40px;border-radius:9px;background:var(--blue-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <svg width="20" height="20" fill="none" stroke="var(--blue)" stroke-width="1.8" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          </div>
+          <div>
+            <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;margin-bottom:4px;">Cargar Reporte de Gestiones Sigella</div>
+            <div style="font-size:12px;color:var(--ink2);line-height:1.6;">Exporta el reporte en formato <strong>.xlsx</strong> y cárgalo aquí. El archivo se procesa <strong>localmente en tu navegador</strong> — sin enviar datos a ningún servidor.</div>
+          </div>
+        </div>
+        <div class="upload-zone g-mb" onclick="document.getElementById('fi').click()">
+          <input type="file" id="fi" accept=".xlsx,.xls" style="display:none" onchange="handleFile(this)">
+          <div class="upload-icon-wrap">
+            <svg width="24" height="24" fill="none" stroke="var(--blue)" stroke-width="1.8" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </div>
+          <div class="upload-title">Arrastra tu archivo Excel aquí</div>
+          <div class="upload-hint">o haz clic para buscar en tu computadora</div>
+          <span class="upload-tag">Formatos: .xlsx · .xls</span>
+        </div>
+        <div class="card">
+          <div class="card-title">Columnas esperadas del reporte</div>
+          <div class="card-sub">Asegúrate de que el Excel exportado desde Sigella contenga estas columnas</div>
+          <div class="col-grid">
+            <div class="col-item"><span style="color:var(--g);font-size:11px;font-weight:700;">✓</span><code>ASESOR</code><span class="col-tag">obligatorio</span></div>
+            <div class="col-item"><span style="color:var(--g);font-size:11px;font-weight:700;">✓</span><code>CLASIFICACION</code><span class="col-tag">obligatorio</span></div>
+            <div class="col-item"><span style="color:var(--g);font-size:11px;font-weight:700;">✓</span><code>FECHA_CLAS</code><span class="col-tag">obligatorio</span></div>
+            <div class="col-item"><span style="color:var(--g);font-size:11px;font-weight:700;">✓</span><code>PROYECTO</code><span class="col-tag">obligatorio</span></div>
+            <div class="col-item"><span style="color:var(--y);font-size:11px;font-weight:700;">~</span><code>HORA</code><span class="col-tag">recomendado</span></div>
+            <div class="col-item"><span style="color:var(--y);font-size:11px;font-weight:700;">~</span><code>MONTO</code><span class="col-tag">recomendado</span></div>
+            <div class="col-item"><span style="color:var(--y);font-size:11px;font-weight:700;">~</span><code>TIPO_DE_TRAMITE</code><span class="col-tag">recomendado</span></div>
+            <div class="col-item"><span style="color:var(--y);font-size:11px;font-weight:700;">~</span><code>ESTADO</code><span class="col-tag">recomendado</span></div>
+            <div class="col-item"><span style="color:var(--y);font-size:11px;font-weight:700;">~</span><code>TELEFONO</code><span class="col-tag">recomendado</span></div>
+            <div class="col-item"><span style="color:var(--y);font-size:11px;font-weight:700;">~</span><code>OBS</code><span class="col-tag">recomendado</span></div>
+          </div>
+        </div>
+        <div id="upload-res" style="margin-top:12px;"></div>
+      </div>
+    </div>
+
+    <!-- CARTERAS -->
+    <div class="page" id="page-carteras">
+      <div class="filters">
+        <input class="fi" id="f-car" placeholder="Buscar cartera..." oninput="fCar()" style="width:200px;">
+        <select class="fi" id="f-sup" onchange="fCar()"><option value="">Todos los supervisores</option></select>
+        <select class="fi" id="f-rie" onchange="fCar()">
+          <option value="">Todos los riesgos</option><option value="C">Crítico</option>
+          <option value="A">Alto</option><option value="M">Medio</option><option value="B">Bajo</option>
+        </select>
+        <span class="fi-count" id="car-cnt"></span>
+      </div>
+      <div class="card"><div class="tw"><table>
+        <thead><tr>
+          <th onclick="srt('car','proyectoFinal')">Cartera</th><th onclick="srt('car','supervisor')">Supervisor</th>
+          <th onclick="srt('car','totalGestiones')">Gestiones</th><th onclick="srt('car','gestionesEfectivas')">Efectivas</th>
+          <th onclick="srt('car','gestionesNoEfectivas')">No Ef.</th><th onclick="srt('car','gestionesSinClasificar')">Sin Clas.</th>
+          <th onclick="srt('car','porcentajeEfectividad')">% Efect.</th><th onclick="srt('car','totalPromesas')">Promesas</th>
+          <th onclick="srt('car','montoPromesado')">Monto</th><th>Asesores</th><th>Riesgo</th>
+        </tr></thead>
+        <tbody id="tb-car"></tbody>
+      </table></div></div>
+    </div>
+
+    <!-- SUPERVISORES -->
+    <div class="page" id="page-supervisores">
+      <div class="card"><div class="tw"><table>
+        <thead><tr>
+          <th>Supervisor</th><th>Carteras</th><th>Gestiones</th><th>Asesores</th>
+          <th>Efectivas</th><th>% Efect.</th><th>Promesas</th><th>Monto</th><th>Riesgo</th>
+        </tr></thead>
+        <tbody id="tb-sup"></tbody>
+      </table></div></div>
+    </div>
+
+    <!-- ASESORES -->
+    <div class="page" id="page-asesores">
+      <div class="filters">
+        <input class="fi" id="f-ase" placeholder="Buscar asesor..." oninput="fAse()" style="width:200px;">
+        <select class="fi" id="f-ase-sup" onchange="fAse()"><option value="">Todos los supervisores</option></select>
+        <select class="fi" id="f-ase-car" onchange="fAse()"><option value="">Todas las carteras</option></select>
+        <span class="fi-count" id="ase-cnt"></span>
+      </div>
+      <div class="card"><div class="tw"><table>
+        <thead><tr>
+          <th>Asesor</th><th>Supervisor</th><th>Cartera</th><th>Gestiones</th>
+          <th>Efectivas</th><th>No Ef.</th><th>Sin Clas.</th><th>% Efect.</th>
+          <th>Promesas</th><th>Monto</th><th>Riesgo</th>
+        </tr></thead>
+        <tbody id="tb-ase"></tbody>
+      </table></div></div>
+    </div>
+
+    <!-- PROMESAS -->
+    <div class="page" id="page-promesas">
+      <div class="kg" id="kg-prom"></div>
+      <div class="g2" style="margin-top:14px;">
+        <div class="card">
+          <div class="card-title">Promesas por Cartera</div><div class="card-sub">Ranking por volumen</div>
+          <div style="position:relative;"><canvas id="ch-pc" role="img" aria-label="Promesas cartera" height="240"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Monto por Cartera</div><div class="card-sub">Ranking por monto comprometido</div>
+          <div style="position:relative;"><canvas id="ch-pm" role="img" aria-label="Monto cartera" height="240"></canvas></div>
+        </div>
+      </div>
+      <div class="card g-mb">
+        <div class="card-title">Top 10 Asesores por Promesas</div><div class="card-sub">Mejor desempeño en captación de compromisos</div>
+        <div style="position:relative;"><canvas id="ch-pa" role="img" aria-label="Top asesores" height="160"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ALERTAS -->
+    <div class="page" id="page-alertas"><div id="al-full"></div></div>
+
+    <!-- PLANES -->
+    <div class="page" id="page-planes">
+      <div class="ph"><div class="ph-card">
+        <div class="ph-ico">📋</div>
+        <div class="ph-title">Planes de Acción</div>
+        <div class="ph-text">Módulo para crear, editar y dar seguimiento a compromisos gerenciales vinculados a alertas operativas. Disponible en la siguiente fase de desarrollo.</div>
+      </div></div>
+    </div>
+
+    <!-- CONFIG -->
+    <div class="page" id="page-config">
+      <div style="max-width:640px;">
+        <div class="card g-mb">
+          <div class="card-title">Umbrales de Riesgo</div>
+          <div class="card-sub">Define los porcentajes de efectividad que determinan el nivel de alerta de cada cartera</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+            <div><label style="font-size:11px;color:var(--ink3);display:block;margin-bottom:4px;font-weight:600;">EFECTIVIDAD CRÍTICA (%)</label><input type="number" class="fi" value="10" style="width:100%;"></div>
+            <div><label style="font-size:11px;color:var(--ink3);display:block;margin-bottom:4px;font-weight:600;">EFECTIVIDAD ALTO RIESGO (%)</label><input type="number" class="fi" value="20" style="width:100%;"></div>
+            <div><label style="font-size:11px;color:var(--ink3);display:block;margin-bottom:4px;font-weight:600;">EFECTIVIDAD MEDIA (%)</label><input type="number" class="fi" value="35" style="width:100%;"></div>
+            <div><label style="font-size:11px;color:var(--ink3);display:block;margin-bottom:4px;font-weight:600;">% SIN CLASIFICAR ALTO (%)</label><input type="number" class="fi" value="30" style="width:100%;"></div>
+          </div>
+          <button class="fi" style="background:var(--blue);color:white;border:none;font-weight:600;cursor:pointer;padding:7px 18px;">Guardar configuración</button>
+        </div>
+        <div class="card">
+          <div class="card-title">Mapeo de Proyectos y Supervisores</div>
+          <div class="card-sub">Cómo se agrupan los proyectos de Sigella hacia proyectos finales</div>
+          <div class="tw"><table>
+            <thead><tr><th>Proyecto Original (Sigella)</th><th>Proyecto Final</th><th>Supervisor Asignado</th></tr></thead>
+            <tbody id="tb-cfg"></tbody>
+          </table></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<script>
+const SMAP={"BAC":"YILDA GIRON","BANISTMO ACTIVA":"LUIS DOLANDE","BANISTMO RECOVERY":"ANDREW GONZALEZ","KREDIYA":"NICOLL E NUÑEZ","SURA":"MIRIAM NUÑEZ","TIGO":"NICOLL E NUÑEZ","SOLVE":"MIRIAM NUÑEZ","MULTIBANK":"YILDA GIRON","BANCO LA HIPOTECARIA":"MIRIAM NUÑEZ","GLOBAL BANK":"YILDA GIRON","RODELAG":"CARLOS MUÑOZ"};
+const PMAP={"BAC CASTIGADA":"BAC","BANISTMO S.A.":"BANISTMO RECOVERY","BANISTMO ACTIVA PREDICTIVO":"BANISTMO ACTIVA","BANISTMO ACTIVA 61 A 90":"BANISTMO ACTIVA","SURA CORREDORES":"SURA","SURA HCIS":"SURA","TIGO CICLO 15":"TIGO","TIGO CICLO 1 (1-30)":"TIGO","TIGO CICLO 6":"TIGO","SURA BANCA INDIVIDUAL":"SURA","SURA TC Y ACH":"SURA","MULTIBANK ACTIVA":"MULTIBANK","AFINITI FINANCIAL":"AFINITI"};
+const DIST={"BAC":{p:.35,ne:.45,as:["CARLOS MENDOZA","JESSICA PINTO","ROBERTO ALBA"]},"BANISTMO ACTIVA":{p:.12,ne:.55,as:["MARIA TORRES","JUAN PEREZ","SOFIA RAMOS","ANDRES MORA"]},"BANISTMO RECOVERY":{p:.28,ne:.50,as:["PATRICIA LEON","DIEGO VARGAS"]},"SURA":{p:.40,ne:.40,as:["LUIS FAJARDO","CARMEN DELGADO","MIGUEL SALAS"]},"TIGO":{p:.08,ne:.60,as:["ROSA MEDINA","FERNANDO CRUZ","ELENA RIOS"]},"KREDIYA":{p:.22,ne:.48,as:["PABLO GARCIA","NATALIA VEGA"]},"MULTIBANK":{p:.32,ne:.42,as:["ANA MORA","JORGE BLANCO"]},"RODELAG":{p:.18,ne:.52,as:["ISABEL NUÑEZ"]},"SOLVE":{p:.45,ne:.35,as:["VICTOR SALAZAR"]},"GLOBAL BANK":{p:.15,ne:.55,as:["DANIELA RUIZ","HECTOR LIMA"]}};
+const CP=["PROMESA DE PAGO >","PROMESA DE PAGO PARCIAL >","PROMESA DE PAGO TOTAL VCDO >","PAGO VOLUNTARIO >","ACEPTA > COMPROMISO DE PAGO","CREAR PROMESA DE PAGO >"];
+const CNE=["NO CONTESTA","BUZON","NUMERO EQUIVOCADO","FUERA DE SERVICIO","TELEFONO APAGADO","OCUPADO","ILOCALIZABLE","LLAMADA CAIDA","NO CONTACTADO"];
+const CSC=["RENEGOCIACION","CLIENTE EN PROCESO","REVISION INTERNA","PENDIENTE VALIDACION","CASO ESPECIAL"];
+const TIPOS=["CANCELACION","ARREGLO DE PAGO","REACTIVACION","DESCUENTO DIRECTO"];
+const PAL=["#2563EB","#6D28D9","#0F766E","#0369A1","#9333EA","#0284C7","#047857","#7C3AED"];
+const RC={C:"#C53030",A:"#C05621",M:"#B7791F",B:"#276749"};
+
+const rnd=a=>a[Math.floor(Math.random()*a.length)];
+const ri=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const fm=v=>'$'+v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fp=v=>v.toFixed(1)+'%';
+const rClass=r=>'rb rb-'+r;
+const rLabel=r=>r==="C"?"CRÍTICO":r==="A"?"ALTO":r==="M"?"MEDIO":"BAJO";
+
+const G=[];
+for(const[car,d]of Object.entries(DIST)){
+  const sup=SMAP[car]||"SIN SUPERVISOR";
+  for(const ase of d.as){
+    for(let i=0;i<ri(80,200);i++){
+      const r=Math.random();let cl,esP,cat;
+      if(r<d.p){cl=rnd(CP);esP=true;cat="E";}
+      else if(r<d.p+d.ne){cl=rnd(CNE);esP=false;cat="NE";}
+      else{cl=rnd(CSC);esP=false;cat="SC";}
+      G.push({ase,car,sup,cl,esP,cat,monto:esP?ri(100,50000):0,tipo:esP?rnd(TIPOS):"SIN TIPO"});
+    }
+  }
+}
+
+function mkCar(){
+  const gr={};
+  for(const g of G){if(!gr[g.car])gr[g.car]={gs:[],sup:g.sup};gr[g.car].gs.push(g);}
+  return Object.entries(gr).map(([c,{gs,sup}])=>{
+    const ef=gs.filter(g=>g.cat==="E").length,ne=gs.filter(g=>g.cat==="NE").length,sc=gs.filter(g=>g.cat==="SC").length;
+    const ps=gs.filter(g=>g.esP),mo=ps.reduce((a,g)=>a+g.monto,0);
+    const pct=gs.length>0?(ef/gs.length)*100:0;
+    const fr={};for(const g of ps)fr[g.tipo]=(fr[g.tipo]||0)+1;
+    const tr=Object.entries(fr).sort((a,b)=>b[1]-a[1])[0]?.[0]||"N/A";
+    const as=[...new Set(gs.map(g=>g.ase))];
+    let ri="B";if(pct<10)ri="C";else if(pct<20)ri="A";else if(pct<35)ri="M";
+    return{proyectoFinal:c,supervisor:sup,totalGestiones:gs.length,gestionesEfectivas:ef,gestionesNoEfectivas:ne,gestionesSinClasificar:sc,porcentajeEfectividad:pct,totalPromesas:ps.length,montoPromesado:mo,promedioMonto:ps.length>0?mo/ps.length:0,asesoresActivos:as.length,tipoTramiteMasFrecuente:tr,riesgo:ri,asesores:as};
+  });
+}
+function mkSup(cars){
+  const gr={};
+  for(const c of cars){if(!gr[c.supervisor])gr[c.supervisor]={cars:[],tg:0,ef:0,ne:0,sc:0,ps:0,mo:0,as:new Set()};const x=gr[c.supervisor];x.cars.push(c.proyectoFinal);x.tg+=c.totalGestiones;x.ef+=c.gestionesEfectivas;x.ne+=c.gestionesNoEfectivas;x.sc+=c.gestionesSinClasificar;x.ps+=c.totalPromesas;x.mo+=c.montoPromesado;c.asesores.forEach(a=>x.as.add(a));}
+  return Object.entries(gr).map(([s,d])=>{
+    const pct=d.tg>0?(d.ef/d.tg)*100:0,rv=cars.filter(c=>c.supervisor===s).map(c=>c.riesgo);
+    let ri="B";if(rv.includes("C"))ri="C";else if(rv.includes("A"))ri="A";else if(rv.includes("M"))ri="M";
+    return{supervisor:s,carterasAsignadas:d.cars,totalGestiones:d.tg,totalAsesores:d.as.size,gestionesEfectivas:d.ef,gestionesNoEfectivas:d.ne,porcentajeEfectividad:pct,totalPromesas:d.ps,montoPromesado:d.mo,riesgo:ri};
+  });
+}
+function mkAse(){
+  const gr={};
+  for(const g of G){const k=g.ase+'|'+g.car;if(!gr[k])gr[k]={ase:g.ase,car:g.car,sup:g.sup,gs:[]};gr[k].gs.push(g);}
+  return Object.values(gr).map(({ase,car,sup,gs})=>{
+    const ef=gs.filter(g=>g.cat==="E").length,ne=gs.filter(g=>g.cat==="NE").length,sc=gs.filter(g=>g.cat==="SC").length;
+    const ps=gs.filter(g=>g.esP),mo=ps.reduce((a,g)=>a+g.monto,0),pct=gs.length>0?(ef/gs.length)*100:0;
+    let ri="B";if(pct<10)ri="C";else if(pct<20)ri="A";else if(pct<35)ri="M";
+    return{asesor:ase,supervisor:sup,proyectoFinal:car,totalGestiones:gs.length,gestionesEfectivas:ef,gestionesNoEfectivas:ne,gestionesSinClasificar:sc,porcentajeEfectividad:pct,totalPromesas:ps.length,montoPromesado:mo,riesgo:ri};
+  });
+}
+function mkAlerts(cars){
+  const al=[];
+  for(const c of cars){
+    if(c.riesgo==="C")al.push({nivel:"C",tipo:"EFECTIVIDAD_CRITICA",desc:`La cartera ${c.proyectoFinal} tiene efectividad de ${fp(c.porcentajeEfectividad)}, por debajo del umbral crítico.`,causa:"Baja contactabilidad o bases de datos desactualizadas.",accion:"Revisar calidad de teléfonos e intervenir asesores con cero promesas.",proyecto:c.proyectoFinal,supervisor:c.supervisor});
+    if(c.riesgo==="A")al.push({nivel:"A",tipo:"EFECTIVIDAD_BAJA",desc:`La cartera ${c.proyectoFinal} presenta efectividad de ${fp(c.porcentajeEfectividad)}.`,causa:"Posibles problemas de negociación o calidad de contacto.",accion:"Priorizar acompañamiento de supervisores y revisión de llamadas.",proyecto:c.proyectoFinal,supervisor:c.supervisor});
+    const psc=c.totalGestiones>0?(c.gestionesSinClasificar/c.totalGestiones)*100:0;
+    if(psc>25)al.push({nivel:"M",tipo:"CALIDAD_TIPIFICACION",desc:`El ${psc.toFixed(1)}% de gestiones en ${c.proyectoFinal} están sin clasificar.`,causa:"Asesores usando etiquetas no configuradas en el sistema.",accion:"Actualizar lista de clasificaciones en Configuración.",proyecto:c.proyectoFinal,supervisor:c.supervisor});
+  }
+  return al;
+}
+
+const CARS=mkCar().sort((a,b)=>a.porcentajeEfectividad-b.porcentajeEfectividad);
+const SUPS=mkSup(CARS),ASES=mkAse(),ALERTS=mkAlerts(CARS);
+const tEf=G.filter(g=>g.cat==="E").length,tNe=G.filter(g=>g.cat==="NE").length,tSc=G.filter(g=>g.cat==="SC").length;
+const tPs=G.filter(g=>g.esP),tMo=tPs.reduce((a,g)=>a+g.monto,0);
+const KPI={tg:G.length,tas:[...new Set(G.map(g=>g.ase))].size,tcar:[...new Set(G.map(g=>g.car))].size,tsup:[...new Set(G.map(g=>g.sup))].size,tps:tPs.length,moto:tMo,prom:tPs.length>0?tMo/tPs.length:0,ef:tEf,ne:tNe,sc:tSc,pef:G.length>0?(tEf/G.length)*100:0,pefc:(tEf+tNe)>0?(tEf/(tEf+tNe))*100:0,crit:CARS.filter(c=>c.riesgo==="C").length,alto:CARS.filter(c=>c.riesgo==="A").length};
+
+const META={dashboard:{t:"Dashboard Gerencial",s:"Resumen ejecutivo de operaciones"},carga:{t:"Cargar Reporte",s:"Importar archivo Excel exportado desde Sigella"},carteras:{t:"Análisis de Carteras",s:"KPIs y desempeño por cartera"},supervisores:{t:"Supervisores",s:"Desempeño y alertas por supervisor"},asesores:{t:"Asesores",s:"Productividad y efectividad individual"},promesas:{t:"Promesas de Pago",s:"Compromisos y montos negociados"},alertas:{t:"Alertas Operativas",s:"Situaciones que requieren atención"},planes:{t:"Planes de Acción",s:"Seguimiento de compromisos gerenciales"},config:{t:"Configuración",s:"Parámetros y reglas del sistema"}};
+
+function go(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.sb-item').forEach(n=>n.classList.remove('on'));
+  document.getElementById('page-'+id).classList.add('on');
+  if(el)el.classList.add('on');
+  const m=META[id]||{t:'',s:''};
+  document.getElementById('tb-page').textContent=m.t;
+  document.getElementById('tb-sub').textContent=m.s;
+}
+
+const SVG={
+  wave:`<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`,
+  dlr:`<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>`,
+  up:`<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>`,
+  bell:`<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>`,
+  brief:`<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>`,
+  users:`<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>`,
+};
+
+function kc(label,val,sub,ac,icBg,svg){
+  return`<div class="kc" style="--ac:${ac};--ic-bg:${icBg}"><div class="kc-accent"></div><div class="kc-icon">${svg}</div><div class="kc-label">${label}</div><div class="kc-val">${val}</div><div class="kc-sub">${sub}</div></div>`;
+}
+
+document.getElementById('kg1').innerHTML=
+  kc("TOTAL GESTIONES",KPI.tg.toLocaleString(),`${KPI.tas} asesores · ${KPI.tcar} carteras`,"#2563EB","#EEF4FF",SVG.wave)+
+  kc("TOTAL PROMESAS",KPI.tps.toLocaleString(),`${fp((KPI.tps/KPI.tg)*100)} de conversión`,"#6D28D9","#EDE9FE",SVG.dlr)+
+  kc("MONTO PROMESADO",fm(KPI.moto),`Promedio: ${fm(KPI.prom)}`,"#0F766E","#CCFBF1",SVG.up)+
+  kc("EFECTIVIDAD TOTAL",fp(KPI.pef),`Clasificada: ${fp(KPI.pefc)}`,"#0369A1","#E0F2FE",SVG.up);
+document.getElementById('kg2').innerHTML=
+  kc("CARTERAS CRÍTICAS",KPI.crit,`${KPI.alto} en riesgo alto`,"#C53030","#FFF5F5",SVG.brief)+
+  kc("SUPERVISORES",KPI.tsup,`${KPI.tcar} carteras asignadas`,"#9333EA","#F3E8FF",SVG.users)+
+  kc("SIN CLASIFICAR",KPI.sc.toLocaleString(),`${fp((KPI.sc/KPI.tg)*100)} del total`,"#B7791F","#FFFFF0",SVG.bell)+
+  kc("ALERTAS ACTIVAS",ALERTS.length,`${ALERTS.filter(a=>a.nivel==="C").length} críticas`,"#C05621","#FFFAF0",SVG.bell);
+
+const sorted=[...CARS].sort((a,b)=>b.porcentajeEfectividad-a.porcentajeEfectividad);
+new Chart(document.getElementById('ch-ef'),{type:'bar',data:{labels:sorted.map(c=>c.proyectoFinal.length>11?c.proyectoFinal.slice(0,11)+'…':c.proyectoFinal),datasets:[{data:sorted.map(c=>+c.porcentajeEfectividad.toFixed(1)),backgroundColor:sorted.map(c=>RC[c.riesgo]),borderRadius:4,borderSkipped:false}]},options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.raw}% efectividad`,title:ctx=>[sorted[ctx[0].dataIndex].proyectoFinal]}}},scales:{y:{max:100,grid:{color:'#F0F4FA'},ticks:{callback:v=>v+'%',font:{size:10},color:'#9AABBD'}},x:{grid:{display:false},ticks:{font:{size:10},color:'#9AABBD'}}},responsive:true,maintainAspectRatio:false}});
+
+const pieCols=['#2563EB','#C53030','#9AABBD'];
+const pieLeg=document.getElementById('leg-pie');
+[['Efectivas',KPI.ef,pieCols[0]],['No efectivas',KPI.ne,pieCols[1]],['Sin clasificar',KPI.sc,pieCols[2]]].forEach(([l,v,c])=>{pieLeg.innerHTML+=`<span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink2);"><span style="width:9px;height:9px;border-radius:2px;background:${c};flex-shrink:0;"></span>${l}: ${v.toLocaleString()}</span>`;});
+new Chart(document.getElementById('ch-pie'),{type:'doughnut',data:{labels:['Efectivas','No efectivas','Sin clasificar'],datasets:[{data:[KPI.ef,KPI.ne,KPI.sc],backgroundColor:pieCols,borderWidth:2,borderColor:'#fff'}]},options:{plugins:{legend:{display:false}},cutout:'60%',responsive:true,maintainAspectRatio:false}});
+
+const byPr=[...CARS].sort((a,b)=>b.totalPromesas-a.totalPromesas).slice(0,8);
+new Chart(document.getElementById('ch-pr'),{type:'bar',indexAxis:'y',data:{labels:byPr.map(c=>c.proyectoFinal),datasets:[{data:byPr.map(c=>c.totalPromesas),backgroundColor:'#6D28D9',borderRadius:3}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{color:'#F0F4FA'},ticks:{font:{size:10},color:'#9AABBD'}},y:{grid:{display:false},ticks:{font:{size:10},color:'#9AABBD'}}},responsive:true,maintainAspectRatio:false}});
+
+const trData={};for(const g of G)if(g.esP)trData[g.tipo]=(trData[g.tipo]||0)+1;
+const trE=Object.entries(trData).sort((a,b)=>b[1]-a[1]).slice(0,5);
+const trLeg=document.getElementById('leg-tr');
+trE.forEach(([l],i)=>{trLeg.innerHTML+=`<span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink2);"><span style="width:9px;height:9px;border-radius:2px;background:${PAL[i]};flex-shrink:0;"></span>${l}</span>`;});
+new Chart(document.getElementById('ch-tr'),{type:'doughnut',data:{labels:trE.map(e=>e[0]),datasets:[{data:trE.map(e=>e[1]),backgroundColor:PAL.slice(0,trE.length),borderWidth:2,borderColor:'#fff'}]},options:{plugins:{legend:{display:false}},cutout:'55%',responsive:true,maintainAspectRatio:false}});
+
+const crit=[...CARS].filter(c=>c.riesgo==="C"||c.riesgo==="A").slice(0,5);
+document.getElementById('ml-riesgo').innerHTML=crit.map(c=>`<div class="mini-row"><div style="min-width:0;flex:1;"><div class="mini-name">${c.proyectoFinal}</div><div class="mini-meta">${c.supervisor} · ${c.totalGestiones.toLocaleString()} gestiones</div></div><div class="mini-right"><span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:${RC[c.riesgo]}">${fp(c.porcentajeEfectividad)}</span><span class="${rClass(c.riesgo)}">${rLabel(c.riesgo)}</span></div></div>`).join('');
+
+document.getElementById('al-sub-dash').textContent=`${ALERTS.length} alertas generadas · ${ALERTS.filter(a=>a.nivel==="C").length} críticas`;
+document.getElementById('ml-alertas').innerHTML=ALERTS.slice(0,5).map(a=>`<div style="padding:9px 12px;border-radius:7px;background:var(--surface2);border-left:3px solid ${RC[a.nivel]};margin-bottom:6px;"><div style="font-size:12px;font-weight:500;color:var(--ink);margin-bottom:2px;">${a.desc}</div><div style="font-size:10.5px;color:var(--ink3);">${a.proyecto} · ${a.supervisor}</div></div>`).join('');
+
+let carF=[...CARS],carSort={f:'porcentajeEfectividad',a:true};
+document.getElementById('f-sup').innerHTML+=[...new Set(CARS.map(c=>c.supervisor))].sort().map(s=>`<option value="${s}">${s}</option>`).join('');
+function rCar(){document.getElementById('car-cnt').textContent=carF.length+' carteras';document.getElementById('tb-car').innerHTML=carF.map(c=>`<tr><td><div class="td-a">${c.proyectoFinal}</div><div class="td-b">${c.tipoTramiteMasFrecuente}</div></td><td style="font-size:11.5px;color:var(--ink2)">${c.supervisor}</td><td class="td-n">${c.totalGestiones.toLocaleString()}</td><td class="td-g">${c.gestionesEfectivas.toLocaleString()}</td><td class="td-r">${c.gestionesNoEfectivas.toLocaleString()}</td><td class="td-m">${c.gestionesSinClasificar.toLocaleString()}</td><td class="td-p" style="color:${RC[c.riesgo]}">${fp(c.porcentajeEfectividad)}</td><td class="td-n">${c.totalPromesas.toLocaleString()}</td><td style="font-size:11.5px;font-family:'JetBrains Mono',monospace;">${fm(c.montoPromesado)}</td><td class="td-n">${c.asesoresActivos}</td><td><span class="${rClass(c.riesgo)}">${rLabel(c.riesgo)}</span></td></tr>`).join('');}
+function fCar(){const b=document.getElementById('f-car').value.toUpperCase(),s=document.getElementById('f-sup').value,r=document.getElementById('f-rie').value;carF=CARS.filter(c=>(!b||c.proyectoFinal.includes(b)||c.supervisor.includes(b))&&(!s||c.supervisor===s)&&(!r||c.riesgo===r));rCar();}
+function srt(t,f){if(t==='car'){if(carSort.f===f)carSort.a=!carSort.a;else{carSort.f=f;carSort.a=false;}carF.sort((a,b)=>{const av=a[f],bv=b[f];return typeof av==='number'?(carSort.a?av-bv:bv-av):(carSort.a?String(av).localeCompare(String(bv)):String(bv).localeCompare(String(av)));});rCar();}}
+rCar();
+
+document.getElementById('tb-sup').innerHTML=SUPS.map(s=>`<tr><td class="td-a">${s.supervisor}</td><td style="font-size:11px;color:var(--ink3);">${s.carterasAsignadas.join(', ')}</td><td class="td-n">${s.totalGestiones.toLocaleString()}</td><td class="td-n">${s.totalAsesores}</td><td class="td-g">${s.gestionesEfectivas.toLocaleString()}</td><td class="td-p" style="color:${RC[s.riesgo]}">${fp(s.porcentajeEfectividad)}</td><td class="td-n">${s.totalPromesas.toLocaleString()}</td><td style="font-size:11.5px;font-family:'JetBrains Mono',monospace;">${fm(s.montoPromesado)}</td><td><span class="${rClass(s.riesgo)}">${rLabel(s.riesgo)}</span></td></tr>`).join('');
+
+document.getElementById('f-ase-sup').innerHTML+=[...new Set(ASES.map(a=>a.supervisor))].sort().map(s=>`<option value="${s}">${s}</option>`).join('');
+document.getElementById('f-ase-car').innerHTML+=[...new Set(ASES.map(a=>a.proyectoFinal))].sort().map(c=>`<option value="${c}">${c}</option>`).join('');
+function fAse(){const b=document.getElementById('f-ase').value.toUpperCase(),s=document.getElementById('f-ase-sup').value,c=document.getElementById('f-ase-car').value;const d=ASES.filter(a=>(!b||a.asesor.includes(b))&&(!s||a.supervisor===s)&&(!c||a.proyectoFinal===c));document.getElementById('ase-cnt').textContent=d.length+' asesores';document.getElementById('tb-ase').innerHTML=d.map(a=>`<tr><td class="td-a">${a.asesor}</td><td style="font-size:11.5px;color:var(--ink2)">${a.supervisor}</td><td style="font-size:11.5px;color:var(--ink2)">${a.proyectoFinal}</td><td class="td-n">${a.totalGestiones.toLocaleString()}</td><td class="td-g">${a.gestionesEfectivas.toLocaleString()}</td><td class="td-r">${a.gestionesNoEfectivas.toLocaleString()}</td><td class="td-m">${a.gestionesSinClasificar.toLocaleString()}</td><td class="td-p" style="color:${RC[a.riesgo]}">${fp(a.porcentajeEfectividad)}</td><td class="td-n">${a.totalPromesas.toLocaleString()}</td><td style="font-size:11.5px;font-family:'JetBrains Mono',monospace;">${fm(a.montoPromesado)}</td><td><span class="${rClass(a.riesgo)}">${rLabel(a.riesgo)}</span></td></tr>`).join('');}
+fAse();
+
+const byProm=[...CARS].sort((a,b)=>b.totalPromesas-a.totalPromesas);
+document.getElementById('kg-prom').innerHTML=
+  kc("TOTAL PROMESAS",KPI.tps.toLocaleString(),"Compromisos registrados","#6D28D9","#EDE9FE",SVG.dlr)+
+  kc("MONTO TOTAL",fm(KPI.moto),`Promedio: ${fm(KPI.prom)}`,"#0F766E","#CCFBF1",SVG.up)+
+  kc("TOP CARTERA",byProm[0]?.proyectoFinal||"N/A",`${byProm[0]?.totalPromesas||0} promesas`,"#0369A1","#E0F2FE",SVG.brief)+
+  kc("TOP SUPERVISOR",[...SUPS].sort((a,b)=>b.totalPromesas-a.totalPromesas)[0]?.supervisor||"N/A","Mayor volumen","#9333EA","#F3E8FF",SVG.users);
+
+setTimeout(()=>{
+  const byM=[...CARS].sort((a,b)=>b.montoPromesado-a.montoPromesado);
+  new Chart(document.getElementById('ch-pc'),{type:'bar',indexAxis:'y',data:{labels:byProm.slice(0,8).map(c=>c.proyectoFinal),datasets:[{data:byProm.slice(0,8).map(c=>c.totalPromesas),backgroundColor:'#6D28D9',borderRadius:3}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{color:'#F0F4FA'},ticks:{font:{size:10},color:'#9AABBD'}},y:{grid:{display:false},ticks:{font:{size:10},color:'#9AABBD'}}},responsive:true,maintainAspectRatio:false}});
+  new Chart(document.getElementById('ch-pm'),{type:'bar',indexAxis:'y',data:{labels:byM.slice(0,8).map(c=>c.proyectoFinal),datasets:[{data:byM.slice(0,8).map(c=>Math.round(c.montoPromesado)),backgroundColor:'#0F766E',borderRadius:3}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{color:'#F0F4FA'},ticks:{font:{size:10},color:'#9AABBD',callback:v=>'$'+v.toLocaleString()}},y:{grid:{display:false},ticks:{font:{size:10},color:'#9AABBD'}}},responsive:true,maintainAspectRatio:false}});
+  const topA=[...ASES].sort((a,b)=>b.totalPromesas-a.totalPromesas).slice(0,10);
+  new Chart(document.getElementById('ch-pa'),{type:'bar',data:{labels:topA.map(a=>a.asesor),datasets:[{data:topA.map(a=>a.totalPromesas),backgroundColor:PAL,borderRadius:3}]},options:{plugins:{legend:{display:false}},scales:{y:{grid:{color:'#F0F4FA'},ticks:{font:{size:10},color:'#9AABBD'}},x:{grid:{display:false},ticks:{font:{size:10},color:'#9AABBD'}}},responsive:true,maintainAspectRatio:false}});
+},120);
+
+document.getElementById('al-full').innerHTML=ALERTS.map(a=>`<div class="al-row" style="--al-c:${RC[a.nivel]}"><div class="al-head"><div style="flex:1;"><div class="al-tags"><span class="${rClass(a.nivel)}">${rLabel(a.nivel)}</span><span class="al-type">${a.tipo}</span></div><div class="al-desc">${a.desc}</div><div class="al-detail"><strong style="color:var(--ink);">Causa probable:</strong> ${a.causa}</div><div class="al-detail"><strong style="color:var(--ink);">Acción sugerida:</strong> ${a.accion}</div></div><div class="al-meta"><div style="font-weight:600;font-size:12px;color:var(--ink);">${a.proyecto}</div><div style="margin-top:2px;">${a.supervisor}</div><span class="rb rb-C" style="margin-top:6px;display:inline-flex;">NUEVA</span></div></div></div>`).join('');
+
+document.getElementById('tb-cfg').innerHTML=Object.entries({...PMAP,...Object.fromEntries(Object.keys(DIST).map(k=>[k,k]))}).map(([o,f])=>`<tr><td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink2)">${o}</td><td style="font-weight:600;font-size:12px;">${f}</td><td style="font-size:12px;color:var(--ink2);">${SMAP[f]||'—'}</td></tr>`).join('');
+
+function handleFile(input){const file=input.files[0];if(!file)return;document.getElementById('upload-res').innerHTML=`<div class="card" style="border-left:3px solid var(--g);"><div style="font-weight:700;font-size:13px;color:var(--g);margin-bottom:8px;">✓ Archivo recibido correctamente</div><div style="font-size:12px;color:var(--ink2);line-height:1.8;"><strong>Nombre:</strong> ${file.name}<br><strong>Tamaño:</strong> ${(file.size/1024).toFixed(1)} KB<br><br><span style="color:var(--ink3);">El módulo completo de lectura con SheetJS se activa en la Fase 3. Por ahora explora el dashboard con datos de demostración.</span></div></div>`;}
+</script>
+</body>
+</html>

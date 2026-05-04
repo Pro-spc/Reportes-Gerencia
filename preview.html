@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centro de Control de Cobranzas</title>
+    <!-- Incluir el link de Tailwind CSS para el diseño responsivo -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <!-- Incluir Chart.js para los gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100">
+
+    <div class="container mx-auto p-5">
+        <!-- Encabezado -->
+        <header class="mb-6">
+            <h1 class="text-3xl font-bold">Centro de Control de Cobranzas</h1>
+            <p class="text-gray-500">Comparación de KPIs mensuales - Desempeño por Cartera, Supervisor y Asesor</p>
+        </header>
+
+        <!-- Selector de opciones (Base de datos o archivo) -->
+        <div class="mb-6">
+            <button id="loadDbBtn" class="bg-blue-500 text-white px-4 py-2 rounded mr-4">Conectar a Base de Datos</button>
+            <input type="file" id="fileInput" class="mr-4" accept=".csv, .xlsx">
+            <button id="loadFileBtn" class="bg-green-500 text-white px-4 py-2 rounded">Cargar Archivo</button>
+        </div>
+
+        <!-- Sección para visualizar los KPIs -->
+        <div id="kpisSection">
+            <!-- Aquí se mostrarán los KPIs comparados (de base de datos o archivo) -->
+            <canvas id="kpiChart"></canvas>
+        </div>
+        
+        <!-- Sección para mostrar el desempeño de carteras, asesores y supervisores -->
+        <div id="performanceSection" class="mt-6">
+            <h2 class="text-xl font-semibold mb-3">Desempeño</h2>
+            <!-- Aquí irán las tablas o gráficos para desempeño -->
+            <div id="carterasContainer"></div>
+        </div>
+
+    </div>
+
+    <!-- Script para manejar las interacciones de la página -->
+    <script>
+        document.getElementById('loadDbBtn').addEventListener('click', connectToDatabase);
+        document.getElementById('loadFileBtn').addEventListener('click', loadFileData);
+
+        // Función para conectarse a la base de datos (Ejemplo usando Fetch)
+        function connectToDatabase() {
+            // Ejemplo usando fetch para obtener datos desde la base de datos.
+            fetch('/api/getKPIData')  // Suponiendo que este endpoint existe
+                .then(response => response.json())
+                .then(data => {
+                    renderKPIChart(data);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+
+        // Función para cargar datos desde un archivo (CSV o Excel)
+        function loadFileData() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert("Por favor, selecciona un archivo.");
+                return;
+            }
+
+            const reader = new FileReader();
+
+            reader.onload = function (event) {
+                const fileData = event.target.result;
+                // Aquí deberíamos procesar el archivo (CSV o Excel)
+                // Vamos a suponer que procesamos un CSV por ahora
+                const parsedData = parseCSV(fileData);
+                renderKPIChart(parsedData);
+            };
+
+            reader.readAsText(file);
+        }
+
+        // Función para parsear un archivo CSV
+        function parseCSV(data) {
+            const rows = data.split("\n");
+            const headers = rows[0].split(",");
+
+            const parsedData = rows.slice(1).map(row => {
+                const cells = row.split(",");
+                return {
+                    mes: cells[0],
+                    proyecto: cells[1],
+                    supervisor: cells[2],
+                    totalGestiones: parseInt(cells[3]),
+                    totalPromesas: parseInt(cells[4]),
+                    montoTotal: parseFloat(cells[5]),
+                    efectividad: parseFloat(cells[6]),
+                };
+            });
+
+            return parsedData;
+        }
+
+        // Función para renderizar el gráfico de KPI
+        function renderKPIChart(data) {
+            const labels = data.map(item => item.mes);
+            const totalPromesas = data.map(item => item.totalPromesas);
+            const efectividad = data.map(item => item.efectividad);
+
+            const ctx = document.getElementById('kpiChart').getContext('2d');
+            const kpiChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Total Promesas',
+                            data: totalPromesas,
+                            backgroundColor: '#3498db',
+                        },
+                        {
+                            label: 'Efectividad (%)',
+                            data: efectividad,
+                            backgroundColor: '#2ecc71',
+                        }
+                    ]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Función para renderizar las tablas de desempeño por Cartera y Supervisor
+        function renderPerformanceTables(data) {
+            // Aquí generaríamos las tablas basadas en los datos procesados.
+        }
+    </script>
+</body>
+</html>
